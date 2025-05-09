@@ -27,12 +27,10 @@ public class PostsController {
     public String getPosts(Model model) {
         Post post = Post.builder()
                 .id(1L)
-                .text("Тестовый пост")
+                .text("Да пребудет с тобой Сила! В далёкой-далёкой галактике идёт война. Повстанцы борются против тирании Империи и её страшного оружия — Звезды Смерти.")
                 .title("Star Wars")
                 .likesCount(22)
                 .imagePath("")
-                .textParts("123")
-                .textPreview("444")
                 .comments(List.of(
                         Comment.builder().postId(1L).id(92L).text("May the Force be with you").build()
                 ))
