@@ -43,6 +43,7 @@ public class DataSourceConfiguration {
 
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("schema-posts.sql"));
+        populator.addScript(new ClassPathResource("data.sql"));
         populator.execute(dataSource);
     }
 
