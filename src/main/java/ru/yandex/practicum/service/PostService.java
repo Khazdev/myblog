@@ -10,4 +10,5 @@ public interface PostService {
 
     String getImagePathByPostId(long postId);
 
+    Post findPostById(long postId);
 }

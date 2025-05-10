@@ -23,4 +23,10 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new NoSuchElementException("Пост с id " + postId + " не найден или не содержит image_path"));
     }
 
+    @Override
+    public Post findPostById(long postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new NoSuchElementException("Пост с id " + postId + " не найден"));
+    }
+
 }

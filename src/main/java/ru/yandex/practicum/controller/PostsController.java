@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class PostsController {
 
-    private final PostServiceImpl postService;
+    private final PostService postService;
 
     @GetMapping("/")
     public String root() {
@@ -87,4 +87,11 @@ public class PostsController {
     public String showAddForm() {
         return "add-post";
     }
+
+    @GetMapping("posts/{id}")
+    public String viewPost(@PathVariable("id") Long id, Model model) {
+        model.addAttribute("post", postService.findPostById(id));
+        return "post";
+    }
+
 }

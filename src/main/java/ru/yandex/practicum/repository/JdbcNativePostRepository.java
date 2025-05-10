@@ -44,4 +44,17 @@ public class JdbcNativePostRepository implements PostRepository {
         return result.isEmpty() ? Optional.empty() : Optional.ofNullable(result.getFirst());
     }
 
+    public Optional<Post> findById(Long id) {
+        String sql = "SELECT * FROM posts WHERE id = ?";
+
+        List<Post> result = jdbcTemplate.query(sql, (rs, rowNum) -> Post.builder()
+                .id(rs.getLong("id"))
+                .title(rs.getString("title"))
+                .text(rs.getString("text"))
+                .imagePath(rs.getString("image_path"))
+                .likesCount(rs.getInt("likes_count"))
+                .build(), id);
+
+        return result.stream().findFirst();
+    }
 }
