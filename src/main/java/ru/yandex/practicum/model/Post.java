@@ -15,8 +15,18 @@ public class Post {
     private String text;
     private String imagePath;
     private int likesCount;
-    private List<Comment> comments;
-    private List<String> tags;
+    @Builder.Default
+    private List<Comment> comments = Collections.emptyList();
+    @Builder.Default
+    private List<String> tags = Collections.emptyList();
+
+//TODO все что ниже перевести в DTO
+    public String getTagsAsText() {
+        if (tags == null || tags.isEmpty()) {
+            return "";
+        }
+        return String.join(" ", tags);
+    }
 
     public List<String> getTextParts() {
         return text != null
