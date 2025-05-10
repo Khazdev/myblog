@@ -1,22 +1,33 @@
 package ru.yandex.practicum.controller;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.ResponseBody;
-import ru.yandex.practicum.model.Comment;
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.yandex.practicum.model.Paging;
 import ru.yandex.practicum.model.Post;
+import ru.yandex.practicum.service.PostServiceImpl;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+@Slf4j
 @Controller
+@RequiredArgsConstructor
 public class PostsController {
+
+    private final PostServiceImpl postService;
 
     @GetMapping("/")
     public String root() {
@@ -24,36 +35,56 @@ public class PostsController {
     }
 
     @GetMapping("/posts")
-    public String getPosts(Model model) {
-        Post post = Post.builder()
-                .id(1L)
-                .text("Да пребудет с тобой Сила! В далёкой-далёкой галактике идёт война. Повстанцы борются против тирании Империи и её страшного оружия — Звезды Смерти.")
-                .title("Star Wars")
-                .likesCount(22)
-                .imagePath("")
-                .comments(List.of(
-                        Comment.builder().postId(1L).id(92L).text("May the Force be with you").build()
-                ))
-                .tags(List.of("starwars", "darthvader"))
-                .build();
+    public String getPosts(
+            @RequestParam(name = "search", defaultValue = "") String search,
+            @RequestParam(name = "pageNumber", defaultValue = "1") int pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = "10") int pageSize,
+            Model model) {
+        List<Post> posts = postService.getPosts(pageNumber, pageSize, search);
 
         model.addAttribute("paging", new Paging(1, 2, false, false));
-        model.addAttribute("posts", List.of(post));
+        model.addAttribute("posts", posts);
         model.addAttribute("search", "");
         return "posts";
     }
 
     @GetMapping("/images/{id}")
-    @ResponseBody
-    public ResponseEntity<byte[]> getTestImage(@PathVariable("id") Long id) throws IOException {
-        try (InputStream in = getClass().getResourceAsStream("/images/vader.jpg")) {
-            if (in == null) {
+    public ResponseEntity<Resource> getPostImage(@PathVariable("id") Long id) throws IOException {
+        String imagePathByPostId;
+        try {
+            imagePathByPostId = postService.getImagePathByPostId(id);
+            log.debug("Retrieved image path for post {}: {}", id, imagePathByPostId);
+
+            // Добавляем проверку на пустую строку
+            if (imagePathByPostId.isBlank()) {
+                log.warn("Post {} has empty image_path", id);
                 return ResponseEntity.notFound().build();
             }
-            byte[] imageBytes = in.readAllBytes();
-            return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG)
-                    .body(imageBytes);
+        } catch (NoSuchElementException e) {
+            log.error("Post {} not found or has no image_path", id, e);
+            return ResponseEntity.notFound().build();
         }
+
+        Path projectRoot = Paths.get("").toAbsolutePath(); // Абсолютный путь от того места, где лежит томкат
+        Path imageFile = projectRoot.resolve(imagePathByPostId).normalize();
+
+        if (!Files.exists(imageFile)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (!imageFile.startsWith(projectRoot)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Resource image = new UrlResource(imageFile.toUri());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(image);
+    }
+
+    @GetMapping("posts/add")
+    public String showAddForm() {
+        return "add-post";
     }
 }
