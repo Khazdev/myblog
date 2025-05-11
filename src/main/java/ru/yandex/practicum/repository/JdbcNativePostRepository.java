@@ -2,9 +2,12 @@ package ru.yandex.practicum.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.model.Post;
 
+import java.sql.PreparedStatement;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -68,24 +71,27 @@ public class JdbcNativePostRepository implements PostRepository {
 
     private Post createPost(Post post) {
         String sql = """
-            INSERT INTO posts (title, text, image_path, likes_count)
-            VALUES (?, ?, ?, ?)
-            """;
+        INSERT INTO posts (title, text, image_path, likes_count)
+        VALUES (?, ?, ?, ?)
+        """;
 
-        List<Long> ids = jdbcTemplate.query(
-                sql,
-                (rs, rowNum) -> rs.getLong("id"),
-                post.getTitle(),
-                post.getText(),
-                post.getImagePath(),
-                post.getLikesCount()
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        if (ids.isEmpty()) {
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            ps.setString(1, post.getTitle());
+            ps.setString(2, post.getText());
+            ps.setString(3, post.getImagePath());
+            ps.setInt(4, post.getLikesCount());
+            return ps;
+        }, keyHolder);
+
+        Number key = keyHolder.getKey();
+        if (key == null) {
             throw new IllegalStateException("Failed to insert post");
         }
 
-        post.setId(ids.getFirst());
+        post.setId(key.longValue());
         return post;
     }
 

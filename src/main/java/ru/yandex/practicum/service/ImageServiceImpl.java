@@ -49,7 +49,7 @@ public class ImageServiceImpl implements ImageService {
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
 
         }
-        return IMAGE_ROOT_PATH + "/" + filename;
+        return filename;
     }
 
     @Override

@@ -118,8 +118,35 @@ public class PostsController {
             post.setImagePath(imagePath);
         }
 
-        postService.updatePost(id, post);
+        postService.updatePost(post);
         return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts")
+    public String createPost(
+            @RequestParam("title") String title,
+            @RequestParam("text") String text,
+            @RequestParam("tags") String tagsText,
+            @RequestParam("image") MultipartFile image
+    ) throws IOException {
+        //TODO передать post целиком, что делать с tags?
+        List<String> tags = Arrays.stream(tagsText.trim().split("\\s+"))
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        Post post = Post.builder()
+                .title(title)
+                .text(text)
+                .tags(tags)
+                .build();
+
+        if (!image.isEmpty()) {
+            String imagePath = imageService.saveImage(image);
+            post.setImagePath(imagePath);
+        }
+
+        Post createdPost = postService.createPost(post);
+        return "redirect:/posts/" + createdPost.getId();
     }
 
 }

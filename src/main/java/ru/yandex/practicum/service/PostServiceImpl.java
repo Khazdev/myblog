@@ -30,8 +30,13 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void updatePost(long postId, Post post) {
+    public void updatePost(Post post) {
         postRepository.save(post);
+    }
+
+    @Override
+    public Post createPost(Post post) {
+        return postRepository.save(post);
     }
 
 }
