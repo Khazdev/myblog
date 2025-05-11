@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.model.Post;
 
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -69,6 +70,11 @@ public class JdbcNativePostRepository implements PostRepository {
         }
     }
 
+    @Override
+    public void deletePost(Long id) {
+        jdbcTemplate.update("DELETE FROM posts WHERE id = ?", id);
+    }
+
     private Post createPost(Post post) {
         String sql = """
         INSERT INTO posts (title, text, image_path, likes_count)
@@ -96,20 +102,25 @@ public class JdbcNativePostRepository implements PostRepository {
     }
 
     private Post updatePost(Post post) {
-        String sql = """
-            UPDATE posts
-            SET title = ?, text = ?, image_path = ?, likes_count = ?
-            WHERE id = ?
-            """;
+        StringBuilder sql = new StringBuilder("""
+        UPDATE posts
+        SET title = ?, text = ?, likes_count = ?
+        """);
 
-        int updated = jdbcTemplate.update(
-                sql,
-                post.getTitle(),
-                post.getText(),
-                post.getImagePath(),
-                post.getLikesCount(),
-                post.getId()
-        );
+        List<Object> params = new ArrayList<>();
+        params.add(post.getTitle());
+        params.add(post.getText());
+        params.add(post.getLikesCount());
+
+        if (post.getImagePath() != null) {
+            sql.append(", image_path = ?");
+            params.add(post.getImagePath());
+        }
+
+        sql.append(" WHERE id = ?");
+        params.add(post.getId());
+
+        int updated = jdbcTemplate.update(sql.toString(), params.toArray());
 
         if (updated == 0) {
             throw new IllegalStateException("Post not found with id: " + post.getId());
@@ -117,5 +128,6 @@ public class JdbcNativePostRepository implements PostRepository {
 
         return post;
     }
+
 
 }
