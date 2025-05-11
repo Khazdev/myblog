@@ -29,4 +29,9 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new NoSuchElementException("Пост с id " + postId + " не найден"));
     }
 
+    @Override
+    public void updatePost(long postId, Post post) {
+        postRepository.save(post);
+    }
+
 }

@@ -57,4 +57,59 @@ public class JdbcNativePostRepository implements PostRepository {
 
         return result.stream().findFirst();
     }
+
+    public Post save(Post post) {
+        if (post.getId() == null) {
+            return createPost(post);
+        } else {
+            return updatePost(post);
+        }
+    }
+
+    private Post createPost(Post post) {
+        String sql = """
+            INSERT INTO posts (title, text, image_path, likes_count)
+            VALUES (?, ?, ?, ?)
+            """;
+
+        List<Long> ids = jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> rs.getLong("id"),
+                post.getTitle(),
+                post.getText(),
+                post.getImagePath(),
+                post.getLikesCount()
+        );
+
+        if (ids.isEmpty()) {
+            throw new IllegalStateException("Failed to insert post");
+        }
+
+        post.setId(ids.getFirst());
+        return post;
+    }
+
+    private Post updatePost(Post post) {
+        String sql = """
+            UPDATE posts
+            SET title = ?, text = ?, image_path = ?, likes_count = ?
+            WHERE id = ?
+            """;
+
+        int updated = jdbcTemplate.update(
+                sql,
+                post.getTitle(),
+                post.getText(),
+                post.getImagePath(),
+                post.getLikesCount(),
+                post.getId()
+        );
+
+        if (updated == 0) {
+            throw new IllegalStateException("Post not found with id: " + post.getId());
+        }
+
+        return post;
+    }
+
 }

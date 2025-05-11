@@ -3,22 +3,23 @@ package ru.yandex.practicum.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import ru.yandex.practicum.model.Paging;
 import ru.yandex.practicum.model.Post;
-import ru.yandex.practicum.service.PostServiceImpl;
+import ru.yandex.practicum.service.ImageService;
+import ru.yandex.practicum.service.PostService;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -28,6 +29,7 @@ import java.util.NoSuchElementException;
 public class PostsController {
 
     private final PostService postService;
+    private final ImageService imageService;
 
     @GetMapping("/")
     public String root() {
@@ -55,8 +57,7 @@ public class PostsController {
             imagePathByPostId = postService.getImagePathByPostId(id);
             log.debug("Retrieved image path for post {}: {}", id, imagePathByPostId);
 
-            // Добавляем проверку на пустую строку
-            if (imagePathByPostId.isBlank()) {
+            if (imagePathByPostId == null || imagePathByPostId.isBlank()) {
                 log.warn("Post {} has empty image_path", id);
                 return ResponseEntity.notFound().build();
             }
@@ -65,22 +66,14 @@ public class PostsController {
             return ResponseEntity.notFound().build();
         }
 
-        Path projectRoot = Paths.get("").toAbsolutePath(); // Абсолютный путь от того места, где лежит томкат
-        Path imageFile = projectRoot.resolve(imagePathByPostId).normalize();
-
-        if (!Files.exists(imageFile)) {
+        try {
+            Resource image = imageService.getImageAsResource(imagePathByPostId);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_JPEG)
+                    .body(image);
+        } catch (FileNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
-
-        if (!imageFile.startsWith(projectRoot)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        Resource image = new UrlResource(imageFile.toUri());
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(image);
     }
 
     @GetMapping("posts/add")
@@ -92,6 +85,41 @@ public class PostsController {
     public String viewPost(@PathVariable("id") Long id, Model model) {
         model.addAttribute("post", postService.findPostById(id));
         return "post";
+    }
+
+    @GetMapping("posts/{id}/edit")
+    public String editPost(@PathVariable("id") Long id, Model model) {
+        model.addAttribute("post", postService.findPostById(id));
+        return "add-post";
+    }
+
+    @PostMapping("/posts/{id}")
+    public String updatePost(
+            @PathVariable("id") Long id,
+            @RequestParam("title") String title,
+            @RequestParam("text") String text,
+            @RequestParam("tags") String tagsText,
+            @RequestParam("image") MultipartFile image
+    ) throws IOException {
+        //TODO передать post целиком, что делать с tags?
+        List<String> tags = Arrays.stream(tagsText.trim().split("\\s+"))
+                .filter(s -> !s.isEmpty())
+                .toList();
+
+        Post post = Post.builder()
+                .title(title)
+                .text(text)
+                .tags(tags)
+                .id(id)
+                .build();
+
+        if (!image.isEmpty()) {
+            String imagePath = imageService.saveImage(image);
+            post.setImagePath(imagePath);
+        }
+
+        postService.updatePost(id, post);
+        return "redirect:/posts/" + id;
     }
 
 }

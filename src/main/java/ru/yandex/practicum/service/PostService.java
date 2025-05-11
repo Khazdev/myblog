@@ -11,4 +11,6 @@ public interface PostService {
     String getImagePathByPostId(long postId);
 
     Post findPostById(long postId);
+
+    void updatePost(long postId, Post post);
 }
