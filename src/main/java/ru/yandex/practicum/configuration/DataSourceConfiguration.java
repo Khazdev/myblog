@@ -52,7 +52,6 @@ public class DataSourceConfiguration extends AbstractJdbcConfiguration {
         populator.addScript(new ClassPathResource("schema-posts.sql"));
         populator.addScript(new ClassPathResource("schema-comments.sql"));
         populator.addScript(new ClassPathResource("schema-tags.sql"));
-        populator.addScript(new ClassPathResource("data.sql"));
         populator.execute(dataSource);
     }
 
