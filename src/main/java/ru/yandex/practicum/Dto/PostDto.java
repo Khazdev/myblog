@@ -1,9 +1,10 @@
-package ru.yandex.practicum.model;
+package ru.yandex.practicum.Dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.yandex.practicum.model.Comment;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,13 +13,18 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Post {
+public class PostDto {
 
     private Long id;
     private String title;
     private String text;
+    private String tagsAsText;
+    private List<String> textParts;
+    private String textPreview;
+
     private String imagePath;
     private int likesCount;
+
     @Builder.Default
     private List<Comment> comments = Collections.emptyList();
     @Builder.Default

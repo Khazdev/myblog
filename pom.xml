@@ -60,6 +60,12 @@
             <artifactId>spring-data-jdbc</artifactId>
             <version>3.4.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>4.5.0-M2</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -69,6 +75,9 @@
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
+                    <configuration>
+                        <parameters>true</parameters> <!-- Для сохранения имен параметров -->
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-war-plugin</artifactId>
