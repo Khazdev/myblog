@@ -12,8 +12,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import ru.yandex.practicum.mapper.PostToPostDtoMapper;
+import ru.yandex.practicum.model.Comment;
+import ru.yandex.practicum.model.Page;
 import ru.yandex.practicum.model.Paging;
 import ru.yandex.practicum.model.Post;
+import ru.yandex.practicum.service.CommentService;
 import ru.yandex.practicum.service.ImageService;
 import ru.yandex.practicum.service.PostService;
 
@@ -30,6 +34,7 @@ public class PostsController {
 
     private final PostService postService;
     private final ImageService imageService;
+    private final CommentService commentService;
 
     @GetMapping("/")
     public String root() {
@@ -42,11 +47,11 @@ public class PostsController {
             @RequestParam(name = "pageNumber", defaultValue = "1") int pageNumber,
             @RequestParam(name = "pageSize", defaultValue = "10") int pageSize,
             Model model) {
-        List<Post> posts = postService.getPosts(pageNumber, pageSize, search);
-
-        model.addAttribute("paging", new Paging(1, 2, false, false));
-        model.addAttribute("posts", posts);
-        model.addAttribute("search", "");
+        Page<Post> page = postService.getPosts(search, pageNumber, pageSize);
+        Paging paging = page.paging();
+        model.addAttribute("paging", new Paging(paging.pageNumber(), paging.pageSize(), paging.hasNext(), paging.hasPrevious()));
+        model.addAttribute("posts", PostToPostDtoMapper.mapList(page.posts()));
+        model.addAttribute("search", search);
         return "posts";
     }
 
@@ -83,13 +88,13 @@ public class PostsController {
 
     @GetMapping("posts/{id}")
     public String viewPost(@PathVariable("id") Long id, Model model) {
-        model.addAttribute("post", postService.findPostById(id));
+        model.addAttribute("post", PostToPostDtoMapper.map(postService.findPostById(id)));
         return "post";
     }
 
     @GetMapping("posts/{id}/edit")
     public String editPost(@PathVariable("id") Long id, Model model) {
-        model.addAttribute("post", postService.findPostById(id));
+        model.addAttribute("post", PostToPostDtoMapper.map(postService.findPostById(id)));
         return "add-post";
     }
 
@@ -101,7 +106,6 @@ public class PostsController {
             @RequestParam("tags") String tagsText,
             @RequestParam("image") MultipartFile image
     ) throws IOException {
-        //TODO передать post целиком, что делать с tags?
         List<String> tags = Arrays.stream(tagsText.trim().split("\\s+"))
                 .filter(s -> !s.isEmpty())
                 .toList();
@@ -129,7 +133,6 @@ public class PostsController {
             @RequestParam("tags") String tagsText,
             @RequestParam("image") MultipartFile image
     ) throws IOException {
-        //TODO передать post целиком, что делать с tags?
         List<String> tags = Arrays.stream(tagsText.trim().split("\\s+"))
                 .filter(s -> !s.isEmpty())
                 .toList();
@@ -153,5 +156,39 @@ public class PostsController {
     public String deletePost(@PathVariable("id") Long id) {
         postService.deletePost(id);
         return "redirect:/posts";
+    }
+
+    @PostMapping("/posts/{id}/comments")
+    public String addComment(@PathVariable("id") Long id,
+                             @RequestParam("text") String text) {
+        commentService.addComment(Comment.builder().postId(id).text(text).build());
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{id}/comments/{commentId}")
+    public String editComment(@PathVariable("id") Long id,
+                              @PathVariable("commentId") Long commentId,
+                              @RequestParam("text") String text) {
+        commentService.editComment(commentId, text);
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("/posts/{id}/comments/{commentId}/delete")
+    public String deleteComment(@PathVariable("id") Long id,
+                                @PathVariable("commentId") Long commentId) {
+        commentService.deleteComment(commentId);
+        return "redirect:/posts/" + id;
+    }
+
+    @PostMapping("posts/{id}/like")
+    public String handlePostLike(
+            @PathVariable("id") Long id,
+            @RequestParam("like") boolean like) {
+        if (like) {
+            postService.incrementLikes(id);
+        } else {
+            postService.decrementLikes(id);
+        }
+        return "redirect:/posts/" + id;
     }
 }

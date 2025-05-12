@@ -1,12 +1,11 @@
 package ru.yandex.practicum.service;
 
+import ru.yandex.practicum.model.Page;
 import ru.yandex.practicum.model.Post;
-
-import java.util.List;
 
 public interface PostService {
 
-    List<Post> getPosts(int pageNumber, int pageSize, String search);
+    Page<Post> getPosts(String search, int pageNumber, int pageSize);
 
     String getImagePathByPostId(long postId);
 
@@ -17,4 +16,8 @@ public interface PostService {
     Post createPost(Post post);
 
     void deletePost(long postId);
+
+    void incrementLikes(long postId);
+
+    void decrementLikes(long postId);
 }
