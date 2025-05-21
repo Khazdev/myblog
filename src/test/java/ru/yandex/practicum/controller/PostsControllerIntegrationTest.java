@@ -3,9 +3,10 @@ package ru.yandex.practicum.controller;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.yandex.practicum.TestConfig;
 import ru.yandex.practicum.model.Page;
 import ru.yandex.practicum.model.Paging;
 import ru.yandex.practicum.model.Post;
@@ -21,16 +22,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(PostsController.class)
+@Import(TestConfig.class)
 class PostsControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @Autowired
     private PostService postService;
-    @MockitoBean
+    @Autowired
     private ImageService imageService;
-    @MockitoBean
+    @Autowired
     private CommentService commentService;
 
     @Test
